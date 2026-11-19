@@ -1,0 +1,2 @@
+# HeteroRAG
+Heterogeneous documents + RAG
