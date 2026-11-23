@@ -1,36 +1,33 @@
-from ingestion.loader import Loader
-from chunking.chunker import Splitter
-from vectordb.vector_store import Vector_store
-from retrieval.retriever import Retriever
-from prompts.prompt_templates import get_prompt
-from langchain_deepseek import ChatDeepSeek
-from langchain_ollama import ChatOllama
+from ingestion.loader import loader
+from chunking.chunker import splitter
+from vectordb.vector_store import vector_store
+from retrieval.retriever import retriever
+from chatbot.prompt import get_prompt
+from chatbot.llm import deepseek,ollama
+from chatbot.history import get_history
+from chatbot.prompt import get_prompt
 
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables import RunnableParallel
-from langchain_community.chat_message_histories import ChatMessageHistory
+
+from operator import itemgetter
 from langchain_core.output_parsers import StrOutputParser
 from operator import itemgetter
 import streamlit as st
 from dotenv import load_dotenv
 load_dotenv()
 
-docs = Loader('BNS.pdf')
-chunks = Splitter(docs=docs)
-vector_store = Vector_store(chunks)
-retriever = Retriever(vector_store,10)
 
-# LLM = ChatDeepSeek(model='deepseek-flash')
-LLM = ChatOllama(model='llama3.2')
 
-chat_history = {}
 
-def get_history(session_id: str):
-    if session_id not in chat_history:
-        chat_history[session_id]=ChatMessageHistory()
-    return chat_history[session_id]
-        
+docs = loader('BNS.pdf')
+chunks = splitter(docs=docs)
+vectorstore = vector_store(chunks)
+retriever = retriever(vectorstore,10)
+LLM = ollama()        
 prompt = get_prompt()
+
+
 
 chain = RunnableParallel({
     'retrieved_context': itemgetter('query') | retriever,
@@ -44,7 +41,6 @@ chatbot = RunnableWithMessageHistory(
     input_messages_key='query',
     history_messages_key='chat_history',
 )
-
 response = chatbot.invoke({'query':'POCSO'},
                 config={'configurable':{'session_id':'shreyas'}})
 
